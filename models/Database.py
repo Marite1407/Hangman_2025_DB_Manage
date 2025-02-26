@@ -81,7 +81,7 @@ class Database:
         self.cursor.execute("SELECT DISTINCT category FROM words")
         categories = [row[0] for row in self.cursor.fetchall()]
 
-        print(f"DEBUG: get_all_categories() tulemused: {categories}")  # ✅ Kontrollime, kas "Värvid" on andmebaasis
+        print(f"DEBUG: get_all_categories() tulemused: {categories}")  # Kontrollime, kas "Värvid" on andmebaasis
 
         return categories
 

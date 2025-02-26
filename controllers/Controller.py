@@ -71,7 +71,7 @@ class Controller:
         else:  # Kui sisestati uus kategooria käsitsi
             category = self.view.get_txt_category.get().strip()
 
-        print(f"DEBUG: Sisestatud sõna: '{word}', kategooria: '{category}'")  # ✅ Kontrollime sisestatud väärtused
+        print(f"DEBUG: Sisestatud sõna: '{word}', kategooria: '{category}'")  # Kontrollime sisestatud väärtused
 
         if word and category and category != "Vali kategooria":
             # Kontrollime, kas sõna on juba andmebaasis
@@ -82,7 +82,7 @@ class Controller:
             self.model.add_word(word, category)
             self.update_table()
 
-            self.update_category_combobox()  # ✅ Uuendame rippmenüüd KOHE!
+            self.update_category_combobox()  # Uuendame rippmenüüd KOHE!
 
             # Tühjendame sisestuskastid
             self.view.get_txt_word.delete(0, END)

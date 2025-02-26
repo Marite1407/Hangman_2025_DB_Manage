@@ -147,7 +147,7 @@ class View(Tk):
         Tagastab nupu objektid (Lisa, Muuda, Kustuta, Ava).
         :return: List nuppudest
         """
-        return [self.__btn_add, self.__btn_edit, self.__btn_delete, self.__btn_open]  # ✅ Lisatud "Ava" nupp
+        return [self.__btn_add, self.__btn_edit, self.__btn_delete, self.__btn_open]  # Lisatud "Ava" nupp
 
     # GETTERS
 
