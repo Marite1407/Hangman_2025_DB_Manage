@@ -1,15 +1,16 @@
 from tkinter import *
 from tkinter.ttk import Combobox, Treeview
 
-
 class View(Tk):
 
-    def __init__(self, model):
+    def __init__(self, model, controller):  # Lisame controlleri parameetrina
         """
-        Põhi akna konstruktor
+        Põhiakna konstruktor
         """
-        super().__init__() # Pärib kõik originaal Tk omadused: View(Tk)
+        super().__init__()
         self.model = model
+        self.controller = controller  # Seome kontrolleri õigesti
+
         self.__myTable = None
 
         self.grid_columnconfigure(1, weight=1)
@@ -21,19 +22,16 @@ class View(Tk):
         self.title('Poomismängu andmebaasi haldus')
         self.center(self, self.__width, self.__height)
 
-        # Paneel
+        # Paneelid ja põhivormid
         self.__frame_top, self.__frame_bottom, self.__frame_right = self.create_frames()
-
-        # Põhivorm
         self.__lbl_category, self.__txt_category, self.__lbl_word, self.__txt_word = self.create_main_form()
-
-        # Vana kategooria valik
         self.__lbl_old_categories, self.__combo_categories = self.create_combobox()
-
-        # Nupud
-        self.__btn_add, self.__btn_edit, self.__btn_delete = self.create_buttons()
-
+        self.__btn_add, self.__btn_edit, self.__btn_delete, self.__btn_open = self.create_buttons()
         self.create_table()
+
+        # Seome ENTER-klahvi sõna lisamiseks
+        self.bind("<Return>", lambda event: self.controller.add_word(event))
+
 
     @staticmethod
     def center(win, w, h):
@@ -84,30 +82,28 @@ class View(Tk):
 
     def create_buttons(self):
         """
-        Loob kolm nuppu CRUD jaoks. Antud juhul: CUD (Create, Update, Delete)
-        :return: btn_1, btn_2, btn_3
+        Loob nupud CRUD jaoks: Lisa, Muuda, Kustuta ja Ava.
         """
         btn_1 = Button(self.__frame_right, text='Lisa')
         btn_2 = Button(self.__frame_right, text='Muuda')
         btn_3 = Button(self.__frame_right, text='Kustuta')
+        btn_4 = Button(self.__frame_right, text='Ava')  # Uus nupp andmebaasi avamiseks
 
         btn_1.grid(row=0, column=1, padx=1, sticky=EW)
         btn_2.grid(row=1, column=2, padx=1, sticky=EW)
         btn_3.grid(row=0, column=2, padx=1, sticky=EW)
+        btn_4.grid(row=1, column=1, padx=1, sticky=EW)  # Paigutame Ava nupu tabelisse
 
-        return btn_1, btn_2, btn_3
+        return btn_1, btn_2, btn_3, btn_4  # Tagastatakse 4 nuppu!
 
     def create_combobox(self):
         """
         Loob ja tagastab rippmenüü labeli ja rippmenüü enda
-        :return: label, combo
         """
         label = Label(self.__frame_top, text='Vana kategooria', background='lightblue', font=('Verdana', 10, 'bold'))
         label.grid(row=1, column=0, pady=5, sticky=EW)
 
         combo = Combobox(self.__frame_top)
-        combo['values'] = ('Vali kategooria', 'Hooned', 'Loomad', 'Sõidukid') # Näidis
-        combo.current(0)
         combo.grid(row=1, column=1, padx=4, sticky=EW)
 
         return label, combo
@@ -118,6 +114,7 @@ class View(Tk):
         :return: None
         """
         self.__myTable = Treeview(self.__frame_bottom)
+        self.__myTable.bind("<<TreeviewSelect>>", self.fill_entry_fields)  # Kui valitakse rida, täidab vormi
 
         vsb = Scrollbar(self.__frame_bottom, orient=VERTICAL, command=self.__myTable.yview)
         vsb.pack(side=RIGHT, fill=Y)
@@ -142,6 +139,15 @@ class View(Tk):
         # (LÕPP) Siin peaks olema andmete tabelisse lisamise või uuendamise koht
 
         self.__myTable.pack(fill=BOTH, expand=True)
+        self.__myTable.bind("<Double-1>", self.on_double_click)  # Kui topeltklikid, saad redigeerida
+
+    @property
+    def get_buttons(self):
+        """
+        Tagastab nupu objektid (Lisa, Muuda, Kustuta, Ava).
+        :return: List nuppudest
+        """
+        return [self.__btn_add, self.__btn_edit, self.__btn_delete, self.__btn_open]  # ✅ Lisatud "Ava" nupp
 
     # GETTERS
 
@@ -176,3 +182,60 @@ class View(Tk):
         :return: Entry objekt
         """
         return self.__txt_word
+
+    def fill_entry_fields(self, event):
+        """
+        Kui kasutaja klikib tabelis sõnale, täidetakse sisestusväljad automaatselt valitud sõnaga.
+        """
+        selected_item = self.__myTable.selection()
+        if selected_item:
+            word_id, word, category = self.__myTable.item(selected_item, "values")[1:4]
+            self.__txt_category.delete(0, END)
+            self.__txt_category.insert(0, category)
+            self.__txt_word.delete(0, END)
+            self.__txt_word.insert(0, word)
+
+    def on_double_click(self, event):
+        """
+        Kui kasutaja topeltklikib tabeli lahtril, saab seda muuta.
+        Vajutades ENTER, salvestatakse muudatus andmebaasi.
+        """
+        item = self.__myTable.selection()
+        if not item:
+            return
+
+        col = self.__myTable.identify_column(event.x)  # Millise veeru peal klikiti
+        row_id = self.__myTable.item(item, "values")[1]  # ID veerg
+        selected_value = self.__myTable.item(item, "values")[int(col[1])]
+
+        entry_edit = Entry(self.__frame_bottom)
+        entry_edit.insert(0, selected_value)
+        entry_edit.place(x=event.x_root - self.__frame_bottom.winfo_rootx(),
+                         y=event.y_root - self.__frame_bottom.winfo_rooty())
+
+        def save_edit(event):
+            new_value = entry_edit.get().strip()
+            entry_edit.destroy()
+
+            if col == "#3":  # Kui muudeti sõna veergu
+                self.controller.update_word_directly(row_id, new_value, None)
+            elif col == "#4":  # Kui muudeti kategooria veergu
+                self.controller.update_word_directly(row_id, None, new_value)
+
+        entry_edit.bind("<Return>", save_edit)  # ENTER vajutamisel salvestame uue väärtuse
+
+        def fill_entry_fields(self, event):
+            """
+            Kui kasutaja klikib tabelis sõnale, täidetakse sisestusväljad automaatselt valitud sõnaga.
+            """
+            selected_item = self.__myTable.selection()
+            if selected_item:
+                values = self.__myTable.item(selected_item, "values")  # Võtab tabelist valitud rea andmed
+                if values:
+                    word_id, word, category = values[1], values[2], values[3]  # ID, sõna, kategooria
+                    self.__txt_category.delete(0, END)
+                    self.__txt_category.insert(0, category)
+                    self.__txt_word.delete(0, END)
+                    self.__txt_word.insert(0, word)
+
+

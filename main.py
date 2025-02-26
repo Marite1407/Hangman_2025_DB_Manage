@@ -4,7 +4,10 @@ from views.View import View
 
 if __name__ == '__main__':
     model = Model()
-    view = View(model)
-    Controller(model, view)
+    view = View(model, None)  # Alguses paneme None, sest controllerit pole veel loodud
+    controller = Controller(model, view)  # Loome kontrolleri
 
-    view.mainloop() # Koodi "viimane" rida
+    # Seome kontrolleri View klassi sisse
+    view.controller = controller
+
+    view.mainloop()  # Käivitame GUI
