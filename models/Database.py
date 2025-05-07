@@ -6,7 +6,7 @@ class Database:
         """
         Loob ühenduse andmebaasiga ja kontrollib, kas vajalik tabel on olemas.
         """
-        # ⬇️ Määrame andmebaasi asukoha SELGELT models kausta sisse
+        
         self.db_path = os.path.join(os.path.dirname(__file__), db_name)
 
         print(f"DEBUG: Avan andmebaasi {self.db_path}")  # Kontrollime, kus see fail asub!
